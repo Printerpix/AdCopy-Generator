@@ -9,6 +9,7 @@ import threading
 import time
 import sys
 import os
+import socket
 
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -420,7 +421,38 @@ def handle_disconnect():
     """Handle client disconnection."""
     print('Client disconnected')
 
+def find_available_port(start_port=5000, max_attempts=10):
+    """
+    Find an available port starting from start_port.
+    
+    Args:
+        start_port (int): Port to start checking from
+        max_attempts (int): Maximum number of ports to try
+    
+    Returns:
+        int: Available port number
+    """
+    for port in range(start_port, start_port + max_attempts):
+        try:
+            # Try to bind to the port
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', port))
+                return port
+        except OSError:
+            # Port is in use, try the next one
+            continue
+    
+    # If no port found, fall back to original
+    return start_port
+
 if __name__ == '__main__':
+    # Find an available port
+    port = find_available_port(5003)
+    
     print("🚀 Starting Ad-Creative Insight Pipeline Web Interface...")
-    print("📱 Open your browser to: http://localhost:5003")
-    socketio.run(app, debug=True, host='0.0.0.0', port=5003)
+    print(f"📱 Open your browser to: http://localhost:{port}")
+    
+    if port != 5003:
+        print(f"⚠️  Default port 5003 was in use, using port {port} instead")
+    
+    socketio.run(app, debug=True, host='0.0.0.0', port=port)
